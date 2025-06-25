@@ -1,0 +1,52 @@
+# Nama workflow yang akan tampil di tab Actions
+name: Build Windows EXE
+
+# Pemicu workflow
+on:
+  # 1. Memicu saat ada push ke branch 'main'
+  push:
+    branches: [ "main" ]
+  # 2. Memicu secara manual lewat tab Actions (paling mudah untuk kasus ini)
+  workflow_dispatch:
+
+# Daftar pekerjaan yang harus dilakukan
+jobs:
+  # Nama pekerjaan (bisa apa saja)
+  build-exe:
+    # MENENTUKAN SERVER: Ini bagian terpenting, kita minta server Windows terbaru
+    runs-on: windows-latest
+
+    steps:
+      # Langkah 1: Mengunduh kode dari repositori Anda ke server
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      # Langkah 2: Menyiapkan lingkungan Python di server
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11' # Anda bisa ganti versi Python jika perlu
+
+      # Langkah 3: Menginstal semua library yang dibutuhkan dari requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Langkah 4: Menjalankan PyInstaller untuk membuat .exe
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller --noconsole --onefile --name "FileRenamer" rename_universal.py
+          
+          # Penjelasan Perintah:
+          # --noconsole   : Karena ini aplikasi GUI, jangan tampilkan jendela command prompt hitam.
+          # --onefile     : Membuat semua jadi satu file .exe saja agar praktis.
+          # --name "..."  : Memberi nama file .exe yang akan dihasilkan.
+          # rename_universal.py : Nama file Python Anda.
+
+      # Langkah 5: Mengunggah hasil .exe sebagai "artifact" agar bisa diunduh
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FileRenamer-Windows-Executable
+          path: dist/FileRenamer.exe # Path ke file .exe yang dibuat oleh PyInstaller
